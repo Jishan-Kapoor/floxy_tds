@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
+    libpangoft2-1.0-0 \
     libstdc++6 \
     libx11-6 \
     libx11-xcb1 \
@@ -34,24 +35,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxi6 \
     libxrandr2 \
     libxrender1 \
+    libxshmfence1 \
     libxss1 \
     libxtst6 \
+    libxkbcommon0 \
+    libgdk-pixbuf2.0-0 \
     lsb-release \
     wget \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright + Chromium
+# Install Playwright + Chromium (with deps)
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir playwright \
-    && playwright install chromium
+    && playwright install --with-deps chromium
 
-# Prevent /dev/shm errors
+# Fix shared memory issues
 ENV PLAYWRIGHT_BROWSERS_PATH=0
 
 # Set working directory
 WORKDIR /app
 
+# Copy source code
 COPY . .
 
 # Install Python dependencies
@@ -59,5 +64,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 8000
 
-# Gunicorn start command
+# Start Gunicorn + Uvicorn worker
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "app:app", "--bind", "0.0.0.0:$PORT"]
